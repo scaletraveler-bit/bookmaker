@@ -13,20 +13,24 @@
     }
 
     .app {
-      max-width: 900px;
+      max-width: 1100px;
       margin: 0 auto;
       padding: 20px;
     }
 
-    h1 {
-      text-align: center;
-      margin-bottom: 8px;
+    .header-image {
+      width: 100%;
+      display: block;
+      border-radius: 16px;
+      margin-bottom: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.45);
     }
 
     .status {
       text-align: center;
       margin-bottom: 20px;
       font-weight: bold;
+      font-size: 24px;
     }
 
     .open { color: #22c55e; }
@@ -55,6 +59,13 @@
       border: none;
       font-size: 18px;
       margin-bottom: 12px;
+      background: #111827;
+      color: #f9fafb;
+      outline: 1px solid #374151;
+    }
+
+    input:focus {
+      outline: 2px solid #64748b;
     }
 
     button {
@@ -84,8 +95,33 @@
       gap: 16px;
     }
 
-    .team-red { border-left: 6px solid #dc2626; }
-    .team-blue { border-left: 6px solid #2563eb; }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1.2fr;
+      gap: 16px;
+      align-items: end;
+    }
+
+    .button-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr 1fr;
+      gap: 12px;
+    }
+
+    .team-red {
+      border-left: 6px solid #dc2626;
+      background: linear-gradient(135deg, rgba(127, 29, 29, .55), #1f2937 60%);
+    }
+
+    .team-blue {
+      border-left: 6px solid #2563eb;
+      background: linear-gradient(135deg, rgba(30, 64, 175, .55), #1f2937 60%);
+    }
+
+    .gold-card {
+      border-left: 6px solid #facc15;
+      background: linear-gradient(135deg, rgba(113, 63, 18, .50), #1f2937 60%);
+    }
 
     .big {
       font-size: 28px;
@@ -129,37 +165,51 @@
       margin: 0;
     }
 
+    @media (max-width: 900px) {
+      .settings-grid,
+      .button-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
     @media (max-width: 700px) {
       .grid { grid-template-columns: 1fr; }
       .app { padding: 14px; }
       .big { font-size: 24px; }
+      .status { font-size: 20px; }
+      .header-image { border-radius: 12px; }
     }
   </style>
 </head>
 <body>
   <div class="app">
-    <h1>Colosseo BookMaker</h1>
+    <img src="header.jpg" alt="Colosseo BookMaker" class="header-image" />
     <div id="statusText" class="status open">受付中 / OPEN</div>
 
     <div class="card">
-      <label>胴元率（%）</label>
-      <input id="houseRate" type="number" value="5" min="0" max="50" step="0.1" />
+      <div class="settings-grid">
+        <div>
+          <label>胴元率（%）</label>
+          <input id="houseRate" type="number" value="5" min="0" max="50" step="0.1" />
+        </div>
 
-      <label>最大オッズ（倍）</label>
-      <input id="maxOdds" type="number" value="5" min="1" step="0.1" />
-    </div>
+        <div>
+          <label>最大オッズ（倍）</label>
+          <input id="maxOdds" type="number" value="5" min="1" step="0.1" />
+        </div>
 
-    <div class="card">
-      <label>賭け金入力（数字のみ）</label>
-      <input id="betAmount" type="number" placeholder="例：1000" min="1" />
-
-      <div class="grid">
-        <button id="addRed" class="red-btn">赤チームに追加</button>
-        <button id="addBlue" class="blue-btn">青チームに追加</button>
+        <div>
+          <label>賭け金入力（数字のみ）</label>
+          <input id="betAmount" type="number" placeholder="例：1000" min="1" />
+        </div>
       </div>
 
-      <button id="toggleClose" class="gray-btn">受付を締め切る</button>
-      <button id="resetAll" class="danger-btn">全リセット</button>
+      <div class="button-grid">
+        <button id="addRed" class="red-btn">赤チームに追加</button>
+        <button id="addBlue" class="blue-btn">青チームに追加</button>
+        <button id="toggleClose" class="gray-btn">受付を締め切る</button>
+        <button id="resetAll" class="danger-btn">全リセット</button>
+      </div>
     </div>
 
     <div class="grid">
@@ -206,7 +256,7 @@
       </div>
     </div>
 
-    <div class="card">
+    <div class="card gold-card">
       <h2>最低保証利益</h2>
       <div id="minimumProfit" class="big profit">0 Gil</div>
       <p class="small-note">※ 赤・青どちらが勝っても、最低でも残る胴元利益です。</p>
