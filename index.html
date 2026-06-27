@@ -98,6 +98,11 @@
       font-size: 14px;
     }
 
+    .profit {
+      color: #facc15;
+      font-weight: bold;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -172,8 +177,11 @@
     <div class="card">
       <h2>集計</h2>
       <p>総プール：<strong id="poolTotal">0 Gil</strong></p>
-      <p>胴元利益：<strong id="houseProfit">0 Gil</strong></p>
+      <p>基本胴元利益：<strong id="baseHouseProfit">0 Gil</strong></p>
       <p>払戻原資：<strong id="payoutPool">0 Gil</strong></p>
+      <p>実際払戻額：<strong id="actualPayout">0 Gil</strong></p>
+      <p>オッズ制限による追加利益：<strong id="capProfit">0 Gil</strong></p>
+      <p>最終胴元利益：<strong id="finalHouseProfit" class="profit">0 Gil</strong></p>
     </div>
 
     <div class="card">
@@ -193,7 +201,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "colosseo-bookmaker-data-v2";
+    const STORAGE_KEY = "colosseo-bookmaker-data-v3";
 
     let bets = [];
     let isClosed = false;
@@ -244,32 +252,44 @@
         .reduce((sum, bet) => sum + bet.amount, 0);
     }
 
-    function calcOdds(teamTotal, payoutPool) {
-      if (teamTotal <= 0) return "-";
+    function getFinalOdds(teamTotal, payoutPool) {
+      if (teamTotal <= 0) return null;
 
       const rawOdds = payoutPool / teamTotal;
       const maxOdds = Number(maxOddsInput.value) || 999;
-      const finalOdds = Math.min(rawOdds, maxOdds);
-
-      return finalOdds.toFixed(2) + "倍";
+      return Math.min(rawOdds, maxOdds);
     }
 
     function update() {
       const redTotal = calcTotal("red");
       const blueTotal = calcTotal("blue");
       const poolTotal = redTotal + blueTotal;
+
       const houseRate = Number(houseRateInput.value) || 0;
-      const houseProfit = poolTotal * (houseRate / 100);
-      const payoutPool = poolTotal - houseProfit;
+      const baseHouseProfit = poolTotal * (houseRate / 100);
+      const payoutPool = poolTotal - baseHouseProfit;
+
+      const redOdds = getFinalOdds(redTotal, payoutPool);
+      const blueOdds = getFinalOdds(blueTotal, payoutPool);
+
+      const redActualPayout = redOdds ? redTotal * redOdds : 0;
+      const blueActualPayout = blueOdds ? blueTotal * blueOdds : 0;
+
+      const worstCaseActualPayout = Math.max(redActualPayout, blueActualPayout);
+      const capProfit = Math.max(0, payoutPool - worstCaseActualPayout);
+      const finalHouseProfit = poolTotal - worstCaseActualPayout;
 
       document.getElementById("redTotal").textContent = formatGil(redTotal);
       document.getElementById("blueTotal").textContent = formatGil(blueTotal);
       document.getElementById("poolTotal").textContent = formatGil(poolTotal);
-      document.getElementById("houseProfit").textContent = formatGil(houseProfit);
+      document.getElementById("baseHouseProfit").textContent = formatGil(baseHouseProfit);
       document.getElementById("payoutPool").textContent = formatGil(payoutPool);
+      document.getElementById("actualPayout").textContent = formatGil(worstCaseActualPayout);
+      document.getElementById("capProfit").textContent = formatGil(capProfit);
+      document.getElementById("finalHouseProfit").textContent = formatGil(finalHouseProfit);
 
-      document.getElementById("redOdds").textContent = calcOdds(redTotal, payoutPool);
-      document.getElementById("blueOdds").textContent = calcOdds(blueTotal, payoutPool);
+      document.getElementById("redOdds").textContent = redOdds ? redOdds.toFixed(2) + "倍" : "-";
+      document.getElementById("blueOdds").textContent = blueOdds ? blueOdds.toFixed(2) + "倍" : "-";
 
       const statusText = document.getElementById("statusText");
       statusText.textContent = isClosed ? "締切済 / CLOSED" : "受付中 / OPEN";
