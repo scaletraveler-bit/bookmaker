@@ -133,6 +133,9 @@
     <div class="card">
       <label>胴元率（%）</label>
       <input id="houseRate" type="number" value="5" min="0" max="50" step="0.1" />
+
+      <label>最大オッズ（倍）</label>
+      <input id="maxOdds" type="number" value="5" min="1" step="0.1" />
     </div>
 
     <div class="card">
@@ -190,12 +193,13 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "colosseo-bookmaker-data-v1";
+    const STORAGE_KEY = "colosseo-bookmaker-data-v2";
 
     let bets = [];
     let isClosed = false;
 
     const houseRateInput = document.getElementById("houseRate");
+    const maxOddsInput = document.getElementById("maxOdds");
     const betAmountInput = document.getElementById("betAmount");
     const addRedBtn = document.getElementById("addRed");
     const addBlueBtn = document.getElementById("addBlue");
@@ -206,7 +210,8 @@
       const data = {
         bets,
         isClosed,
-        houseRate: houseRateInput.value
+        houseRate: houseRateInput.value,
+        maxOdds: maxOddsInput.value
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     }
@@ -220,10 +225,12 @@
         bets = Array.isArray(data.bets) ? data.bets : [];
         isClosed = Boolean(data.isClosed);
         houseRateInput.value = data.houseRate ?? 5;
+        maxOddsInput.value = data.maxOdds ?? 5;
       } catch {
         bets = [];
         isClosed = false;
         houseRateInput.value = 5;
+        maxOddsInput.value = 5;
       }
     }
 
@@ -239,7 +246,12 @@
 
     function calcOdds(teamTotal, payoutPool) {
       if (teamTotal <= 0) return "-";
-      return (payoutPool / teamTotal).toFixed(2) + "倍";
+
+      const rawOdds = payoutPool / teamTotal;
+      const maxOdds = Number(maxOddsInput.value) || 999;
+      const finalOdds = Math.min(rawOdds, maxOdds);
+
+      return finalOdds.toFixed(2) + "倍";
     }
 
     function update() {
@@ -307,6 +319,7 @@
     addBlueBtn.addEventListener("click", () => addBet("blue"));
 
     houseRateInput.addEventListener("input", update);
+    maxOddsInput.addEventListener("input", update);
 
     toggleCloseBtn.addEventListener("click", () => {
       isClosed = !isClosed;
@@ -318,6 +331,7 @@
         bets = [];
         isClosed = false;
         houseRateInput.value = 5;
+        maxOddsInput.value = 5;
         localStorage.removeItem(STORAGE_KEY);
         update();
       }
