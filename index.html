@@ -29,13 +29,8 @@
       font-weight: bold;
     }
 
-    .open {
-      color: #22c55e;
-    }
-
-    .closed {
-      color: #ef4444;
-    }
+    .open { color: #22c55e; }
+    .closed { color: #ef4444; }
 
     .card {
       background: #1f2937;
@@ -78,25 +73,10 @@
       cursor: not-allowed;
     }
 
-    .red-btn {
-      background: #dc2626;
-      color: white;
-    }
-
-    .blue-btn {
-      background: #2563eb;
-      color: white;
-    }
-
-    .gray-btn {
-      background: #6b7280;
-      color: white;
-    }
-
-    .danger-btn {
-      background: #991b1b;
-      color: white;
-    }
+    .red-btn { background: #dc2626; color: white; }
+    .blue-btn { background: #2563eb; color: white; }
+    .gray-btn { background: #6b7280; color: white; }
+    .danger-btn { background: #991b1b; color: white; }
 
     .grid {
       display: grid;
@@ -104,13 +84,8 @@
       gap: 16px;
     }
 
-    .team-red {
-      border-left: 6px solid #dc2626;
-    }
-
-    .team-blue {
-      border-left: 6px solid #2563eb;
-    }
+    .team-red { border-left: 6px solid #dc2626; }
+    .team-blue { border-left: 6px solid #2563eb; }
 
     .big {
       font-size: 28px;
@@ -144,17 +119,9 @@
     }
 
     @media (max-width: 700px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .app {
-        padding: 14px;
-      }
-
-      .big {
-        font-size: 24px;
-      }
+      .grid { grid-template-columns: 1fr; }
+      .app { padding: 14px; }
+      .big { font-size: 24px; }
     }
   </style>
 </head>
@@ -223,6 +190,8 @@
   </div>
 
   <script>
+    const STORAGE_KEY = "colosseo-bookmaker-data-v1";
+
     let bets = [];
     let isClosed = false;
 
@@ -232,6 +201,31 @@
     const addBlueBtn = document.getElementById("addBlue");
     const toggleCloseBtn = document.getElementById("toggleClose");
     const resetAllBtn = document.getElementById("resetAll");
+
+    function saveData() {
+      const data = {
+        bets,
+        isClosed,
+        houseRate: houseRateInput.value
+      };
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    }
+
+    function loadData() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
+
+      try {
+        const data = JSON.parse(saved);
+        bets = Array.isArray(data.bets) ? data.bets : [];
+        isClosed = Boolean(data.isClosed);
+        houseRateInput.value = data.houseRate ?? 5;
+      } catch {
+        bets = [];
+        isClosed = false;
+        houseRateInput.value = 5;
+      }
+    }
 
     function formatGil(value) {
       return Math.floor(value).toLocaleString("ja-JP") + " Gil";
@@ -287,6 +281,8 @@
         `;
         historyBody.appendChild(row);
       });
+
+      saveData();
     }
 
     function addBet(team) {
@@ -321,10 +317,13 @@
       if (confirm("すべての入力履歴を削除しますか？")) {
         bets = [];
         isClosed = false;
+        houseRateInput.value = 5;
+        localStorage.removeItem(STORAGE_KEY);
         update();
       }
     });
 
+    loadData();
     update();
   </script>
 </body>
