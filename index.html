@@ -1,11 +1,331 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8">
-    <title>Colosseo BookMaker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Colosseo BookMaker</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, sans-serif;
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    .app {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .status {
+      text-align: center;
+      margin-bottom: 20px;
+      font-weight: bold;
+    }
+
+    .open {
+      color: #22c55e;
+    }
+
+    .closed {
+      color: #ef4444;
+    }
+
+    .card {
+      background: #1f2937;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+    }
+
+    label {
+      display: block;
+      margin-bottom: 6px;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 18px;
+      margin-bottom: 12px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .red-btn {
+      background: #dc2626;
+      color: white;
+    }
+
+    .blue-btn {
+      background: #2563eb;
+      color: white;
+    }
+
+    .gray-btn {
+      background: #6b7280;
+      color: white;
+    }
+
+    .danger-btn {
+      background: #991b1b;
+      color: white;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .team-red {
+      border-left: 6px solid #dc2626;
+    }
+
+    .team-blue {
+      border-left: 6px solid #2563eb;
+    }
+
+    .big {
+      font-size: 28px;
+      font-weight: bold;
+      margin: 6px 0;
+    }
+
+    .sub {
+      color: #d1d5db;
+      font-size: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th, td {
+      padding: 10px;
+      border-bottom: 1px solid #374151;
+      text-align: left;
+    }
+
+    .delete {
+      background: #374151;
+      color: white;
+      padding: 6px 10px;
+      font-size: 12px;
+      margin: 0;
+    }
+
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      .app {
+        padding: 14px;
+      }
+
+      .big {
+        font-size: 24px;
+      }
+    }
+  </style>
 </head>
 <body>
+  <div class="app">
     <h1>Colosseo BookMaker</h1>
-    <p>GitHub Pagesの公開成功！</p>
+    <div id="statusText" class="status open">受付中 / OPEN</div>
+
+    <div class="card">
+      <label>胴元率（%）</label>
+      <input id="houseRate" type="number" value="5" min="0" max="50" step="0.1" />
+    </div>
+
+    <div class="card">
+      <label>賭け金入力（数字のみ）</label>
+      <input id="betAmount" type="number" placeholder="例：1000" min="1" />
+
+      <div class="grid">
+        <button id="addRed" class="red-btn">赤チームに追加</button>
+        <button id="addBlue" class="blue-btn">青チームに追加</button>
+      </div>
+
+      <button id="toggleClose" class="gray-btn">受付を締め切る</button>
+      <button id="resetAll" class="danger-btn">全リセット</button>
+    </div>
+
+    <div class="grid">
+      <div class="card team-red">
+        <h2>赤チーム</h2>
+        <div class="sub">賭け金合計</div>
+        <div id="redTotal" class="big">0 Gil</div>
+        <div class="sub">現在オッズ</div>
+        <div id="redOdds" class="big">-</div>
+      </div>
+
+      <div class="card team-blue">
+        <h2>青チーム</h2>
+        <div class="sub">賭け金合計</div>
+        <div id="blueTotal" class="big">0 Gil</div>
+        <div class="sub">現在オッズ</div>
+        <div id="blueOdds" class="big">-</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>集計</h2>
+      <p>総プール：<strong id="poolTotal">0 Gil</strong></p>
+      <p>胴元利益：<strong id="houseProfit">0 Gil</strong></p>
+      <p>払戻原資：<strong id="payoutPool">0 Gil</strong></p>
+    </div>
+
+    <div class="card">
+      <h2>入力履歴</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>チーム</th>
+            <th>金額</th>
+            <th>削除</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let bets = [];
+    let isClosed = false;
+
+    const houseRateInput = document.getElementById("houseRate");
+    const betAmountInput = document.getElementById("betAmount");
+    const addRedBtn = document.getElementById("addRed");
+    const addBlueBtn = document.getElementById("addBlue");
+    const toggleCloseBtn = document.getElementById("toggleClose");
+    const resetAllBtn = document.getElementById("resetAll");
+
+    function formatGil(value) {
+      return Math.floor(value).toLocaleString("ja-JP") + " Gil";
+    }
+
+    function calcTotal(team) {
+      return bets
+        .filter(bet => bet.team === team)
+        .reduce((sum, bet) => sum + bet.amount, 0);
+    }
+
+    function calcOdds(teamTotal, payoutPool) {
+      if (teamTotal <= 0) return "-";
+      return (payoutPool / teamTotal).toFixed(2) + "倍";
+    }
+
+    function update() {
+      const redTotal = calcTotal("red");
+      const blueTotal = calcTotal("blue");
+      const poolTotal = redTotal + blueTotal;
+      const houseRate = Number(houseRateInput.value) || 0;
+      const houseProfit = poolTotal * (houseRate / 100);
+      const payoutPool = poolTotal - houseProfit;
+
+      document.getElementById("redTotal").textContent = formatGil(redTotal);
+      document.getElementById("blueTotal").textContent = formatGil(blueTotal);
+      document.getElementById("poolTotal").textContent = formatGil(poolTotal);
+      document.getElementById("houseProfit").textContent = formatGil(houseProfit);
+      document.getElementById("payoutPool").textContent = formatGil(payoutPool);
+
+      document.getElementById("redOdds").textContent = calcOdds(redTotal, payoutPool);
+      document.getElementById("blueOdds").textContent = calcOdds(blueTotal, payoutPool);
+
+      const statusText = document.getElementById("statusText");
+      statusText.textContent = isClosed ? "締切済 / CLOSED" : "受付中 / OPEN";
+      statusText.className = isClosed ? "status closed" : "status open";
+
+      addRedBtn.disabled = isClosed;
+      addBlueBtn.disabled = isClosed;
+      betAmountInput.disabled = isClosed;
+      toggleCloseBtn.textContent = isClosed ? "受付を再開する" : "受付を締め切る";
+
+      const historyBody = document.getElementById("historyBody");
+      historyBody.innerHTML = "";
+
+      bets.forEach((bet, index) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${index + 1}</td>
+          <td>${bet.team === "red" ? "赤チーム" : "青チーム"}</td>
+          <td>${formatGil(bet.amount)}</td>
+          <td><button class="delete" onclick="deleteBet(${index})">削除</button></td>
+        `;
+        historyBody.appendChild(row);
+      });
+    }
+
+    function addBet(team) {
+      const amount = Number(betAmountInput.value);
+
+      if (!amount || amount <= 0) {
+        alert("賭け金を数字で入力してください。");
+        return;
+      }
+
+      bets.push({ team, amount });
+      betAmountInput.value = "";
+      update();
+    }
+
+    function deleteBet(index) {
+      bets.splice(index, 1);
+      update();
+    }
+
+    addRedBtn.addEventListener("click", () => addBet("red"));
+    addBlueBtn.addEventListener("click", () => addBet("blue"));
+
+    houseRateInput.addEventListener("input", update);
+
+    toggleCloseBtn.addEventListener("click", () => {
+      isClosed = !isClosed;
+      update();
+    });
+
+    resetAllBtn.addEventListener("click", () => {
+      if (confirm("すべての入力履歴を削除しますか？")) {
+        bets = [];
+        isClosed = false;
+        update();
+      }
+    });
+
+    update();
+  </script>
 </body>
 </html>
