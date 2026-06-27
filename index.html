@@ -103,6 +103,12 @@
       font-weight: bold;
     }
 
+    .small-note {
+      color: #9ca3af;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -179,9 +185,31 @@
       <p>総プール：<strong id="poolTotal">0 Gil</strong></p>
       <p>基本胴元利益：<strong id="baseHouseProfit">0 Gil</strong></p>
       <p>払戻原資：<strong id="payoutPool">0 Gil</strong></p>
-      <p>実際払戻額：<strong id="actualPayout">0 Gil</strong></p>
-      <p>オッズ制限による追加利益：<strong id="capProfit">0 Gil</strong></p>
-      <p>最終胴元利益：<strong id="finalHouseProfit" class="profit">0 Gil</strong></p>
+      <p class="small-note">※ 払戻原資は、総プールから基本胴元利益を差し引いた金額です。</p>
+    </div>
+
+    <div class="grid">
+      <div class="card team-red">
+        <h2>赤勝利時</h2>
+        <div class="sub">赤側への払戻額</div>
+        <div id="redWinPayout" class="big">0 Gil</div>
+        <div class="sub">胴元利益</div>
+        <div id="redWinProfit" class="big profit">0 Gil</div>
+      </div>
+
+      <div class="card team-blue">
+        <h2>青勝利時</h2>
+        <div class="sub">青側への払戻額</div>
+        <div id="blueWinPayout" class="big">0 Gil</div>
+        <div class="sub">胴元利益</div>
+        <div id="blueWinProfit" class="big profit">0 Gil</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>最低保証利益</h2>
+      <div id="minimumProfit" class="big profit">0 Gil</div>
+      <p class="small-note">※ 赤・青どちらが勝っても、最低でも残る胴元利益です。</p>
     </div>
 
     <div class="card">
@@ -201,7 +229,7 @@
   </div>
 
   <script>
-    const STORAGE_KEY = "colosseo-bookmaker-data-v3";
+    const STORAGE_KEY = "colosseo-bookmaker-data-v4";
 
     let bets = [];
     let isClosed = false;
@@ -272,24 +300,27 @@
       const redOdds = getFinalOdds(redTotal, payoutPool);
       const blueOdds = getFinalOdds(blueTotal, payoutPool);
 
-      const redActualPayout = redOdds ? redTotal * redOdds : 0;
-      const blueActualPayout = blueOdds ? blueTotal * blueOdds : 0;
+      const redWinPayout = redOdds ? redTotal * redOdds : 0;
+      const blueWinPayout = blueOdds ? blueTotal * blueOdds : 0;
 
-      const worstCaseActualPayout = Math.max(redActualPayout, blueActualPayout);
-      const capProfit = Math.max(0, payoutPool - worstCaseActualPayout);
-      const finalHouseProfit = poolTotal - worstCaseActualPayout;
+      const redWinProfit = poolTotal - redWinPayout;
+      const blueWinProfit = poolTotal - blueWinPayout;
+      const minimumProfit = Math.min(redWinProfit, blueWinProfit);
 
       document.getElementById("redTotal").textContent = formatGil(redTotal);
       document.getElementById("blueTotal").textContent = formatGil(blueTotal);
       document.getElementById("poolTotal").textContent = formatGil(poolTotal);
       document.getElementById("baseHouseProfit").textContent = formatGil(baseHouseProfit);
       document.getElementById("payoutPool").textContent = formatGil(payoutPool);
-      document.getElementById("actualPayout").textContent = formatGil(worstCaseActualPayout);
-      document.getElementById("capProfit").textContent = formatGil(capProfit);
-      document.getElementById("finalHouseProfit").textContent = formatGil(finalHouseProfit);
 
       document.getElementById("redOdds").textContent = redOdds ? redOdds.toFixed(2) + "倍" : "-";
       document.getElementById("blueOdds").textContent = blueOdds ? blueOdds.toFixed(2) + "倍" : "-";
+
+      document.getElementById("redWinPayout").textContent = formatGil(redWinPayout);
+      document.getElementById("blueWinPayout").textContent = formatGil(blueWinPayout);
+      document.getElementById("redWinProfit").textContent = formatGil(redWinProfit);
+      document.getElementById("blueWinProfit").textContent = formatGil(blueWinProfit);
+      document.getElementById("minimumProfit").textContent = formatGil(minimumProfit);
 
       const statusText = document.getElementById("statusText");
       statusText.textContent = isClosed ? "締切済 / CLOSED" : "受付中 / OPEN";
